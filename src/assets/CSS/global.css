@@ -32,3 +32,8 @@ html, body , #app {
 .bdbpttom{
     border-bottom: 1px solid;
 }
+
+.el-cascader-menu {
+    height: 300px;
+    width: 100%;
+}
