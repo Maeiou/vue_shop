@@ -118,6 +118,7 @@ export default {
         checkStrictly: 'true',
       },
       selectedKeys: [],
+      
     }
   },
   created() {
@@ -197,6 +198,7 @@ export default {
     addCateDialogClosed() {
       this.$refs.addCateFormRef.resetFields()
     },
+   
   },
 }
 </script>
