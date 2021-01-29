@@ -22,7 +22,7 @@
           :collapse="isCollapse"
           :collapse-transition="false"
           :router="true"
-          :default-active = '$route.path'
+          :default-active="'/' + this.$route.path.split('/')[1]"
         >
           <!-- 一级菜单 -->
           <el-submenu
@@ -82,7 +82,7 @@ export default {
   },
   created() {
     this.getMenuList()
-    this.activePath = window,sessionStorage.getItem('activePath')
+    this.activePath = window.sessionStorage.getItem('activePath')
   },
   methods: {
     saveNavState(activePath) {

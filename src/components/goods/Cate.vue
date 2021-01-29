@@ -47,6 +47,17 @@
           <el-button type="danger" icon="el-icon-delete">删除</el-button>
         </el-table-column>
       </el-table>
+       <el-pagination
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="queryInfo.pagenum"
+        :page-sizes="[5, 10, 20, 50]"
+        :page-size="queryInfo.pagesize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        background
+      >
+      </el-pagination>
     </el-card>
 
     <el-dialog
@@ -92,7 +103,7 @@ export default {
       queryInfo: {
         type: 3,
         pagenum: 1,
-        pagesize: 100,
+        pagesize: 5,
       },
       //商品分类
       catelist: [],
@@ -197,6 +208,14 @@ export default {
     },
     addCateDialogClosed() {
       this.$refs.addCateFormRef.resetFields()
+    },
+    handleSizeChange(newSize) {
+      this.queryInfo.pagesize = newSize
+      this.getGoodsList()
+    },
+    handleCurrentChange(newPage) {
+      this.queryInfo.pagenum = newPage
+      this.getGoodsList()
     },
    
   },

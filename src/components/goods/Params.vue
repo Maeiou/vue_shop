@@ -31,7 +31,7 @@
           ><el-button
             type="primary"
             :disabled="selectedKeys.length < 3"
-            @click="addOrEditFroms = true"
+            @click="addOrEditForms = true"
             >添加参数</el-button
           >
           <el-table :data="manyTabData" border>
@@ -93,7 +93,7 @@
           ><el-button
             type="primary"
             :disabled="selectedKeys.length < 3"
-            @click="addOrEditFroms = true"
+            @click="addOrEditForms = true"
             >添加属性</el-button
           ><el-table :data="onlyTabData" border>
             <!-- 展开 -->
@@ -113,8 +113,8 @@
                   v-model="scope.row.inputValue"
                   ref="saveTagInput"
                   size="small"
-                  @keyup.enter.native="handleInputConfirm(scope.row,index)"
-                  @blur="handleInputConfirm(scope.row,index)"
+                  @keyup.enter.native="handleInputConfirm(scope.row)"
+                  @blur="handleInputConfirm(scope.row)"
                 >
                 </el-input>
                 <el-button
@@ -154,23 +154,23 @@
     <!-- 添加参数 编辑 都使用同一对话框 -->
     <el-dialog
       :title="titleText1 + titleText2"
-      :visible.sync="addOrEditFroms"
+      :visible.sync="addOrEditForms"
       width="50%"
       @close="addDialogClosed"
     >
       <el-form
-        :model="addOrEditFrom"
-        :rules="addOrEditFromRules"
-        ref="addOrEditFromRef"
+        :model="addOrEditForm"
+        :rules="addOrEditFormRules"
+        ref="addOrEditFormRef"
         label-width="100px"
         class="demo-ruleForm"
       >
         <el-form-item :label="titleText2" prop="attr_name">
-          <el-input v-model="addOrEditFrom.attr_name"></el-input>
+          <el-input v-model="addOrEditForm.attr_name"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="addOrEditFroms = false">取 消</el-button>
+        <el-button @click="cancelEditOrAdd">取 消</el-button>
         <el-button type="primary" @click="addOrEditCateAttr">确 定</el-button>
       </span>
     </el-dialog>
@@ -192,9 +192,9 @@ export default {
       activeName: 'many',
       manyTabData: [],
       onlyTabData: [],
-      addOrEditFroms: false,
-      addOrEditFrom: {},
-      addOrEditFromRules: {
+      addOrEditForms: false,
+      addOrEditForm: {},
+      addOrEditFormRules: {
         attr_name: [
           { required: true, message: '请输入参数名称', trigger: 'blur' },
         ],
@@ -253,18 +253,19 @@ export default {
       }
     },
     addDialogClosed() {
-      this.$refs.addOrEditFromRef.resetFields()
+      this.$refs.addOrEditFormRef.resetFields()
     },
     async addOrEditCateAttr() {
       /* 判断是添加还是修改 */
       if (this.addOrEdit === 'add') {
-        this.$refs.addOrEditFromRef.validate((valid) => {
+        /* 添加参数 */
+        this.$refs.addOrEditFormRef.validate((valid) => {
           if (!valid) return
         })
         const { data: res } = await this.$http.post(
           `categories/${this.cateId}/attributes`,
           {
-            attr_name: this.addOrEditFrom.attr_name,
+            attr_name: this.addOrEditForm.attr_name,
             attr_sel: this.activeName,
           }
         )
@@ -273,13 +274,13 @@ export default {
         this.$message.success('添加参数列表成功')
       } else {
         /* 提交编辑参数 */
-        this.$refs.addOrEditFromRef.validate((valid) => {
+        this.$refs.addOrEditFormRef.validate((valid) => {
           if (!valid) return
         })
         const { data: res } = await this.$http.put(
-          `categories/${this.cateId}/attributes/${this.addOrEditFrom.attr_id}`,
+          `categories/${this.cateId}/attributes/${this.addOrEditForm.attr_id}`,
           {
-            attr_name: this.addOrEditFrom.attr_name,
+            attr_name: this.addOrEditForm.attr_name,
             attr_sel: this.activeName,
           }
         )
@@ -289,11 +290,12 @@ export default {
       }
 
       this.getParamsData()
-      this.addOrEditFroms = false
+      this.addOrEditForms = false
+      this.addOrEdit = 'add'
     },
     /* 编辑参数 */
     async editForm(attr_id) {
-      this.addOrEditFroms = true
+      this.addOrEditForms = true
       this.addOrEdit = 'edit'
       console.log(this.activeName)
       const { data: res } = await this.$http.get(
@@ -304,7 +306,7 @@ export default {
       )
       if (res.meta.status !== 200) return this.$message.error('查询参数失败')
       this.$message.success('查询参数成功')
-      this.addOrEditFrom = res.data
+      this.addOrEditForm = res.data
     },
     /* 删除参数 */
     async removeParams(attr_id) {
@@ -339,7 +341,7 @@ export default {
         this.$refs.saveTagInput.$refs.input.focus()
       })
     },
-    async handleInputConfirm(row,index) {
+    async handleInputConfirm(row) {
       if (row.inputValue.trim().length === 0) {
         row.inputValue = ''
         row.inputVisible = false
@@ -355,7 +357,11 @@ export default {
         }
       )
       if (res.meta.status !== 200) {
-        row.attr_vals.splice(index, 1)
+        /* 如果添加失败，则将添加的删除 */
+        setTimeout(() => {
+          row.attr_vals.pop()
+        }, 1000);
+        
         row.inputValue = ''
         row.inputVisible = false
         return this.$message.error('添加参数失败')
@@ -367,9 +373,8 @@ export default {
       row.inputVisible = false
     },
     async handleClosed(index, row) {
-      const vals =  row.attr_vals.splice(index, 1)
-      
-      
+      const vals = row.attr_vals.splice(index, 1)
+
       const { data: res } = await this.$http.put(
         `categories/${this.cateId}/attributes/${row.attr_id}`,
         {
@@ -378,12 +383,21 @@ export default {
           attr_vals: row.attr_vals.join(','),
         }
       )
-      if (res.meta.status !== 200){
-         row.attr_vals.splice(index, 0, vals.join(''))
+      if (res.meta.status !== 200) {
+        row.attr_vals.splice(index, 0, vals.join(''))
         return this.$message.error('删除参数失败')
-      } 
+      }
       this.$message.success('删除参数成功')
     },
+    /* 关闭对话框后将状态重新赋值 */
+    cancelEditOrAdd() {
+      this.addOrEditForms = false
+      /* 设置延迟， */
+      setTimeout(() => {
+        this.addOrEdit = 'add'
+      }, 500)
+    },
+   
   },
   computed: {
     cateId() {
@@ -407,7 +421,7 @@ export default {
 }
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 .cat_opt {
   margin: 15px;
 }
