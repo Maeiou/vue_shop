@@ -13,7 +13,8 @@ import { Button,Form ,FormItem, Input ,Message,Container, Header, Aside,Main,Men
     Tabs,TabPane,
     Steps,Step,
     CheckboxGroup,Checkbox,
-    Upload
+    Upload,
+    Timeline,TimelineItem
 } from 'element-ui'
 
 
@@ -53,6 +54,8 @@ Vue.use(Step)
 Vue.use(CheckboxGroup)
 Vue.use(Checkbox)
 Vue.use(Upload)
+Vue.use(Timeline)
+Vue.use(TimelineItem)
 
 
 Vue.prototype.$message = Message
